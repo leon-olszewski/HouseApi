@@ -1,0 +1,22 @@
+# Download this VSCode extension to send these requests
+# directly from VSCode.
+# https://marketplace.visualstudio.com/items?itemName=humao.rest-client
+
+@base = http://localhost:5000
+
+###
+# Get listings
+GET {{base}}/listings
+
+###
+# Create a listing
+POST {{base}}/listings
+Content-Type: application/json
+
+{
+    "id": "efb9284f-9bab-4e42-bf03-c186f66abc07",
+    "description": "This house is awesome!",
+    "line1": "1337 Haxbury Lane",
+    "province": "ON",
+    "postalCode": "J1C 5T2"
+}
