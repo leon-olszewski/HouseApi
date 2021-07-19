@@ -48,7 +48,35 @@ namespace HouseApi.Models
         public static Province NorthWestTerritories { get; } = new Province("NT");
         public static Province Nunavut { get; } = new Province("NU");
 
-        public static Province GetProvinceByNameCode(string province) => _provinces.Single(p => p.NameCode == province);
+        public static Province GetProvinceByNameCode(string province)
+        {
+            var result = TryGetProvinceByNameCode(province);
+            result.ThrowIfNotSuccess();
+
+            return result.Model!;
+        }
+
+        public static ModelBuilderResult<Province> TryGetProvinceByNameCode(
+            ValidationInput<string?> nameCode)
+        {
+            var result = new ModelBuilderResult<Province>();
+
+            if (nameCode.Value == null)
+            {
+                result.AddRequiredValidationError(nameCode.Key);
+                return result;
+            }
+
+            var provinceFound = _provinces.FirstOrDefault(p => p.NameCode == nameCode.Value);
+            if (provinceFound == null)
+            {
+                result.AddError(nameCode.Key, "Province code format is incorrect. Example format: ON");
+                return result;
+            }
+
+            result.SetModel(provinceFound);
+            return result;
+        }
 
         public static implicit operator string(Province province) => province.NameCode;
     }

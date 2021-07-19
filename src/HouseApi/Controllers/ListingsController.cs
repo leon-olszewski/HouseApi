@@ -1,7 +1,6 @@
 ﻿using HouseApi.Database;
 using HouseApi.DataTransfer;
 using HouseApi.Mappers;
-using HouseApi.Validators;
 using Microsoft.AspNetCore.Mvc;
 using System.Linq;
 
@@ -25,23 +24,19 @@ namespace HouseApi.Controllers
         [HttpPost]
         public IActionResult CreateListing(
             [FromBody] ListingDto listingDto,
-            [FromServices] IListingValidator validator,
             [FromServices] IListingMapper mapper,
             [FromServices] IListingRepository repo)
         {
-            // Validate
-            var validationResult = validator.Validate(listingDto);
-            if (!validationResult.IsValid)
+            // Map + validate
+            var listingModelResult = mapper.MapIn(listingDto);
+            if (!listingModelResult.IsSuccess)
             {
-                ModelState.AddModelErrors(validationResult.ErrorMessages);
+                ModelState.AddModelErrors(listingModelResult);
                 return ValidationProblem();
             }
 
-            // Map
-            var listingModel = mapper.MapIn(listingDto);
-
             // Save
-            repo.GetListings().Add(listingModel);
+            repo.GetListings().Add(listingModelResult.Model!);
             repo.Save();
 
             return Ok();

@@ -28,7 +28,7 @@ namespace HouseApi.Database
         public void Save()
         {
             // Enforce key uniqueness the way a relational DB might.
-            var equalityComparer = new Listing.EntityEqualityComparer();
+            var equalityComparer = new Listing.ListingEntityEqualityComparer();
             var duplicates = _workingSet
                 .GroupBy(x => x, equalityComparer)
                 .Where(g => g.Count() > 1)

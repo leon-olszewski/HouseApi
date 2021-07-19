@@ -1,17 +1,19 @@
-﻿using Microsoft.AspNetCore.Mvc.ModelBinding;
-using System.Collections.Generic;
+﻿using HouseApi.Models;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 
 namespace HouseApi
 {
     public static class Extensions
     {
-        public static void AddModelErrors(this ModelStateDictionary @this, IDictionary<string, string> errors)
+        public static void AddModelErrors(this ModelStateDictionary @this, ModelBuilderResult result)
         {
-            foreach (var errorKeyValuePair in errors)
+            foreach (var errorKvp in result.ErrorMessages)
             {
-                @this.AddModelError(errorKeyValuePair.Key, errorKeyValuePair.Value);
+                foreach (var error in errorKvp.Value)
+                {
+                    @this.AddModelError(errorKvp.Key, error);
+                }
             }
-
         }
     }
 }

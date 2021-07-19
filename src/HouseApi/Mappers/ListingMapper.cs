@@ -5,22 +5,33 @@ namespace HouseApi.Mappers
 {
     public interface IListingMapper
     {
-        Listing MapIn(ListingDto dto);
+        ModelBuilderResult<Listing> MapIn(ListingDto dto);
         ListingDto MapOut(Listing model);
     }
 
     public class ListingMapper : IListingMapper
     {
-        public Listing MapIn(ListingDto dto)
+        public ModelBuilderResult<Listing> MapIn(ListingDto dto)
         {
-            return new Listing
-            (
-                id: dto.Id!.Value,
-                description: dto.Description!,
-                address: new Address(
-                    line1: dto.Line1!,
-                    province: Province.GetProvinceByNameCode(dto.Province!),
-                    postalCode: PostalCode.FromString(dto.PostalCode!)));
+            var postalCodeResult = PostalCode.TryFromString(
+                ValidationInputFactory.Create(nameof(ListingDto.PostalCode), dto.PostalCode));
+            var provinceResult = Province.TryGetProvinceByNameCode(
+                ValidationInputFactory.Create(nameof(ListingDto.Province), dto.Province));
+            var addressResult = Address.TryConstruct(
+                ValidationInputFactory.Create(nameof(ListingDto.Line1), dto.Line1),
+                ValidationInputFactory.Create(nameof(ListingDto.Province), provinceResult.Model),
+                ValidationInputFactory.Create(nameof(ListingDto.PostalCode), postalCodeResult.Model));
+            var listingResult = Listing.TryConstruct(
+                ValidationInputFactory.Create(nameof(ListingDto.Id), dto.Id),
+                ValidationInputFactory.Create(nameof(ListingDto.Description), dto.Description),
+                ValidationInputFactory.Create(Constants.OtherErrors, addressResult.Model));
+
+            var ret = ModelBuilderResult<Listing>.WithCombinedErrors(postalCodeResult, provinceResult, addressResult, listingResult);
+
+            if (ret.IsSuccess)
+                ret.SetModel(listingResult.Model!);
+
+            return ret;
         }
 
         public ListingDto MapOut(Listing model)

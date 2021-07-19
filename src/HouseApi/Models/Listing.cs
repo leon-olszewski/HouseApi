@@ -5,11 +5,8 @@ namespace HouseApi.Models
 {
     public class Listing
     {
-        public Listing(Guid id, string description, Address address)
+        private Listing(Guid id, string description, Address address)
         {
-            if (description.Length > 3000)
-                throw new Exception();
-
             Id = id;
             Description = description;
             Address = address;
@@ -19,7 +16,52 @@ namespace HouseApi.Models
         public string Description { get; }
         public Address Address { get; }
 
-        public class EntityEqualityComparer : IEqualityComparer<Listing>
+        public static Listing Construct(Guid id, string description, Address address)
+        {
+            // Implicitly convert these to validation inputs
+            var result = TryConstruct(id, description, address);
+            result.ThrowIfNotSuccess();
+
+            return result.Model!;
+        }
+
+        public static ModelBuilderResult<Listing> TryConstruct(
+            ValidationInput<Guid?> id,
+            ValidationInput<string?> description,
+            ValidationInput<Address?> address)
+        {
+            var result = new ModelBuilderResult<Listing>();
+
+            if (id.Value == null)
+                result.AddRequiredValidationError(id.Key);
+
+            if (address.Value == null)
+                result.AddRequiredValidationError(address.Key);
+
+            if (description.Value == null)
+                result.AddRequiredValidationError(description.Key);
+            else
+            {
+                const int maxLength = 3000;
+                if (description!.Value.Length > maxLength)
+                {
+                    result.AddMaxLengthValidationError(description.Key, maxLength);
+                    return result;
+                }
+            }
+ 
+            if (!result.IsSuccess)
+                return result;
+
+            result.SetModel(new Listing(id!.Value!.Value, description.Value!, address.Value!));
+            return result;
+        }
+
+        /// <summary>
+        /// Implements basic entity equality semantics. Two entities are considered
+        /// "equal" when their IDs match.
+        /// </summary>
+        public class ListingEntityEqualityComparer : IEqualityComparer<Listing>
         {
             public bool Equals(Listing? x, Listing? y)
             {

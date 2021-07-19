@@ -1,6 +1,5 @@
 using HouseApi.Database;
 using HouseApi.Mappers;
-using HouseApi.Validators;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
@@ -23,7 +22,6 @@ namespace HouseApi
         {
             services.AddControllers();
 
-            services.AddSingleton<IListingValidator, ListingValidator>();
             services.AddSingleton<IListingMapper, ListingMapper>();
             services.AddSingleton<IListingRepository, InMemoryListingRepository>();
         }
