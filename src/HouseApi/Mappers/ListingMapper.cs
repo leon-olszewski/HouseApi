@@ -1,5 +1,6 @@
 ﻿using HouseApi.DataTransfer;
 using HouseApi.Models;
+using System;
 
 namespace HouseApi.Mappers
 {
@@ -13,25 +14,24 @@ namespace HouseApi.Mappers
     {
         public ModelBuilderResult<Listing> MapIn(ListingDto dto)
         {
-            var postalCodeResult = PostalCode.TryFromString(
-                ValidationInputFactory.Create(nameof(ListingDto.PostalCode), dto.PostalCode));
-            var provinceResult = Province.TryGetProvinceByNameCode(
-                ValidationInputFactory.Create(nameof(ListingDto.Province), dto.Province));
-            var addressResult = Address.TryConstruct(
-                ValidationInputFactory.Create(nameof(ListingDto.Line1), dto.Line1),
-                ValidationInputFactory.Create(nameof(ListingDto.Province), provinceResult.Model),
-                ValidationInputFactory.Create(nameof(ListingDto.PostalCode), postalCodeResult.Model));
-            var listingResult = Listing.TryConstruct(
-                ValidationInputFactory.Create(nameof(ListingDto.Id), dto.Id),
-                ValidationInputFactory.Create(nameof(ListingDto.Description), dto.Description),
-                ValidationInputFactory.Create(Constants.OtherErrors, addressResult.Model));
+            Func<ModelBuilderResult<Province>> provinceGetter = () =>
+               Province.TryGetProvinceByNameCode(
+                   new ValidationInput<string?>(nameof(ListingDto.Province), dto.Province));
 
-            var ret = ModelBuilderResult<Listing>.WithCombinedErrors(postalCodeResult, provinceResult, addressResult, listingResult);
+            Func<ModelBuilderResult<PostalCode>> postalCodeGetter = () =>
+                PostalCode.TryFromString(
+                    new ValidationInput<string?>(nameof(ListingDto.PostalCode), dto.PostalCode));
 
-            if (ret.IsSuccess)
-                ret.SetModel(listingResult.Model!);
+            Func<ModelBuilderResult<Address>> addressGetter = () =>
+                Address.TryConstruct(
+                    new ValidationInput<string?>(nameof(ListingDto.Line1), dto.Line1),
+                    new ModelValidationInput<Province>(provinceGetter),
+                    new ModelValidationInput<PostalCode>(postalCodeGetter));
 
-            return ret;
+            return Listing.TryConstruct(
+                new ValidationInput<Guid?>(nameof(ListingDto.Id), dto.Id),
+                new ValidationInput<string?>(nameof(ListingDto.Description), dto.Description),
+                new ModelValidationInput<Address>(addressGetter));
         }
 
         public ListingDto MapOut(Listing model)

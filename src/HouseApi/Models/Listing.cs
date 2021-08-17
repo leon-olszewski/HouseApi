@@ -28,15 +28,16 @@ namespace HouseApi.Models
         public static ModelBuilderResult<Listing> TryConstruct(
             ValidationInput<Guid?> id,
             ValidationInput<string?> description,
-            ValidationInput<Address?> address)
+            ModelValidationInput<Address> address)
         {
             var result = new ModelBuilderResult<Listing>();
 
             if (id.Value == null)
                 result.AddRequiredValidationError(id.Key);
 
-            if (address.Value == null)
-                result.AddRequiredValidationError(address.Key);
+            // Try to get the address from input. Add errors if it fails.
+            var addressInputResult = address.TryGetModel();
+            result.AddErrors(addressInputResult);
 
             if (description.Value == null)
                 result.AddRequiredValidationError(description.Key);
@@ -53,7 +54,7 @@ namespace HouseApi.Models
             if (!result.IsSuccess)
                 return result;
 
-            result.SetModel(new Listing(id!.Value!.Value, description.Value!, address.Value!));
+            result.SetModel(new Listing(id!.Value!.Value, description.Value!, addressInputResult.Model!));
             return result;
         }
 

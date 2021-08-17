@@ -24,16 +24,10 @@
 
         public static ModelBuilderResult<Address> TryConstruct(
             ValidationInput<string?> line1,
-            ValidationInput<Province?> province,
-            ValidationInput<PostalCode?> postalCode)
+            ModelValidationInput<Province> province,
+            ModelValidationInput<PostalCode> postalCode)
         {
             var result = new ModelBuilderResult<Address>();
-
-            if (province.Value == null)
-                result.AddRequiredValidationError(province.Key);
-
-            if (postalCode.Value == null)
-                result.AddRequiredValidationError(postalCode.Key);
 
             if (line1.Value == null)
                 result.AddRequiredValidationError(line1.Key);
@@ -47,10 +41,18 @@
                 }
             }
 
+            // Try to get the province from input. Add errors if it fails.
+            var provinceInputResult = province.TryGetModel();
+            result.AddErrors(provinceInputResult);
+
+            // Try to get the postal code from input. Add errors if it fails.
+            var postalCodeInputResult = postalCode.TryGetModel();
+            result.AddErrors(postalCodeInputResult);
+
             if (!result.IsSuccess)
                 return result;
 
-            result.SetModel(new Address(line1.Value!, province.Value!, postalCode.Value!));
+            result.SetModel(new Address(line1.Value!, provinceInputResult.Model!, postalCodeInputResult.Model!));
             return result;
         }
     }

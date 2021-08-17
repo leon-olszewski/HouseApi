@@ -28,6 +28,16 @@ namespace HouseApi.Models
             ErrorMessages[key] = errorsForKey;
         }
 
+        public void AddErrors(ModelBuilderResult otherResult)
+        {
+            // No need to do anything if there are no errors
+            if (otherResult.IsSuccess)
+                return;
+
+            foreach (var error in otherResult.ErrorMessages)
+                AddErrors(error.Key, error.Value);
+        }
+
         public void SetModel(object model) => Model = model;
 
         public bool IsSuccess => !ErrorMessages.Any();
@@ -40,27 +50,17 @@ namespace HouseApi.Models
     /// </summary>
     public class ModelBuilderResult<T> : ModelBuilderResult where T : class
     {
+        public ModelBuilderResult()
+        {
+        }
+
+        public ModelBuilderResult(T model)
+        {
+            base.Model = model;
+        }
+
         public void SetModel(T model) => base.Model = model;
 
         public new T? Model => base.Model as T;
-
-        /// <summary>
-        /// You may want to combine results when they contain errors to make a
-        /// new error result.
-        /// </summary>
-        public static ModelBuilderResult<T> WithCombinedErrors(params ModelBuilderResult[] otherResults)
-        {
-            var ret = new ModelBuilderResult<T>();
-
-            foreach (var errorsDictionary in otherResults.Select(o => o.ErrorMessages))
-            {
-                foreach (var errorKvp in errorsDictionary)
-                {
-                    ret.AddErrors(errorKvp.Key, errorKvp.Value);
-                }
-            }
-
-            return ret;
-        }
     }
 }
